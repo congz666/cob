@@ -4,4 +4,4 @@ Cob is a very simple and lightweight web framework written by go (golang). It re
 
 
 
-如需查看中文介绍，请跳转  [中文介绍](https://github.com/congz666/cob/zh_CN)
+如需查看中文介绍，请跳转  [中文介绍](https://github.com/congz666/cob/tree/master/zh_CN)

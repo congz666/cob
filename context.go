@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 )
 
 // H is used for serialization
@@ -23,6 +24,11 @@ type Context struct {
 	// middleware
 	handlers []HandlerFunc
 	index    int
+
+	// This mutex protect Keys map
+	mu sync.RWMutex
+	// Keys is a key/value pair exclusively for the context of each request.
+	Keys map[string]interface{}
 }
 
 // newContext is the constructor of cob.Context
@@ -120,4 +126,33 @@ func (c *Context) Bind(obj interface{}) error {
 // Call the bind() of the binding instance
 func (c *Context) BindData(obj interface{}, b binding.Binding) error {
 	return b.Bind(c.Req, obj)
+}
+
+// Set is used to store a new key/value pair exclusively for this context.
+// It also lazy initializes  c.Keys if it was not used previously.
+func (c *Context) Set(key string, value interface{}) {
+	c.mu.Lock()
+	if c.Keys == nil {
+		c.Keys = make(map[string]interface{})
+	}
+
+	c.Keys[key] = value
+	c.mu.Unlock()
+}
+
+// Get returns the value for the given key, ie: (value, true).
+// If the value does not exists it returns (nil, false)
+func (c *Context) Get(key string) (value interface{}, exists bool) {
+	c.mu.RLock()
+	value, exists = c.Keys[key]
+	c.mu.RUnlock()
+	return
+}
+
+// MustGet returns the value for the given key if it exists, otherwise it panics.
+func (c *Context) MustGet(key string) interface{} {
+	if value, exists := c.Get(key); exists {
+		return value
+	}
+	panic("Key \"" + key + "\" does not exist")
 }
